@@ -7,11 +7,35 @@ jobs:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
+
+      # --- BƯỚC 1: Cài Node.js (Bắt buộc) ---
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 18
+
+      # --- BƯỚC 2: Cài thư viện (để có lệnh start:dev) ---
+      - name: Install dependencies
+        run: npm install
+
+      # --- BƯỚC 3: Start Server & Đợi (QUAN TRỌNG NHẤT) ---
+      # Phải dùng shell: bash trên Windows để dùng được dấu '&'
+      - name: Start Server and Wait
+        shell: bash
+        run: |
+          npm run start:dev &
+          npx wait-on http://127.0.0.1:3000
+
+      # --- BƯỚC 4: Cài Postman CLI ---
       - name: Install Postman CLI
         run: |
           powershell.exe -NoProfile -InputFormat None -ExecutionPolicy AllSigned -Command "[System.Net.ServicePointManager]::SecurityProtocol = 3072; iex ((New-Object System.Net.WebClient).DownloadString('https://dl-cli.pstmn.io/install/win64.ps1'))"
+
+      # --- BƯỚC 5: Login Postman ---
       - name: Login to Postman CLI
         run: postman login --with-api-key ${{ secrets.POSTMAN_API_KEY }}
+
+      # --- BƯỚC 6: Chạy Test ---
       - name: Run API tests
         run: |
           postman collection run "43638512-a694d9e8-ad99-47df-ba9a-701d68f321de" -e "43638512-ffb88d78-8ca3-4ccc-8b9e-7cd7289e448a"
